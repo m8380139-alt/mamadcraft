@@ -1,4 +1,4 @@
-const SERVER_ADDRESS = 'mohamadkingxddd-srv-server.play.mihancraft.com:25566';
+const SERVER_ADDRESS = 'mohamadkingxddd-srv-foxddd.play.mihancraft.com:25566';
 const copyButton = document.getElementById('copyServer');
 const copyMessage = document.getElementById('copyMessage');
 copyButton.addEventListener('click', async () => {
