@@ -21,7 +21,8 @@ function initSupabase() {
   sb.auth.onAuthStateChange((_event, session) => updateUserUI(session ? session.user : null));
 }
 function loadSupabaseFrom(urls) {
-  if (window.supabase || !urls.length) return;
+  if (window.supabase) { initSupabase(); return; }
+  if (!urls.length) return;
   const el = document.createElement('script');
   el.src = urls[0];
   el.async = true;
@@ -70,9 +71,10 @@ function updateUserUI(user) {
   currentUser = user;
   if (user) {
     const name = (user.user_metadata && user.user_metadata.username) || user.email;
-    openAuth.textContent = name + ' · خروج';
+    openAuth.textContent = name + ' · پروفایل';
   } else {
     openAuth.textContent = 'ورود / ثبت‌نام ↗';
+    if (typeof closeProfile === 'function') closeProfile();
   }
 }
 function translateError(message) {
@@ -85,8 +87,8 @@ function translateError(message) {
 }
 
 openAuth.addEventListener('click', async () => {
-  if (currentUser && sb) {
-    await sb.auth.signOut();
+  if (currentUser) {
+    openProfile();
   } else {
     showModal();
   }
@@ -132,6 +134,153 @@ authForm.addEventListener('submit', async event => {
     formMessage.textContent = translateError(error.message || 'مشکلی پیش آمد');
   } finally {
     authSubmit.disabled = false;
+  }
+});
+
+// ---------- Profile ----------
+const profileModal = document.getElementById('profileModal');
+const profileForm = document.getElementById('profileForm');
+const profileEmail = document.getElementById('profileEmail');
+const profileAvatarImg = document.getElementById('profileAvatarImg');
+const profileInitial = document.getElementById('profileInitial');
+const avatarInput = document.getElementById('avatarInput');
+const nicknameInput = document.getElementById('nickname');
+const bioInput = document.getElementById('bio');
+const profileSave = document.getElementById('profileSave');
+const profileMessage = document.getElementById('profileMessage');
+const AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
+
+function closeProfile() {
+  if (!profileModal || profileModal.hidden) return;
+  profileModal.hidden = true;
+  document.body.style.overflow = '';
+}
+function defaultName() {
+  if (!currentUser) return '';
+  return (currentUser.user_metadata && currentUser.user_metadata.username) || currentUser.email || '';
+}
+function setAvatar(url) {
+  const label = nicknameInput.value.trim() || defaultName() || '?';
+  profileInitial.textContent = Array.from(label)[0].toUpperCase();
+  if (url) {
+    profileAvatarImg.src = url;
+    profileAvatarImg.hidden = false;
+    profileInitial.hidden = true;
+  } else {
+    profileAvatarImg.removeAttribute('src');
+    profileAvatarImg.hidden = true;
+    profileInitial.hidden = false;
+  }
+}
+function avatarUrl(path, stamp) {
+  if (!path || !sb) return '';
+  const { data } = sb.storage.from('avatars').getPublicUrl(path);
+  return data.publicUrl + '?v=' + encodeURIComponent(stamp || Date.now());
+}
+function resizeToSquare(file, size) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const side = Math.min(img.width, img.height);
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, size, size);
+      ctx.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('resize failed')), 'image/jpeg', 0.85);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('bad image')); };
+    img.src = url;
+  });
+}
+async function openProfile() {
+  if (!currentUser || !sb) return;
+  profileModal.hidden = false;
+  document.body.style.overflow = 'hidden';
+  profileEmail.textContent = currentUser.email || '';
+  profileMessage.textContent = 'کمی صبر کن...';
+  nicknameInput.value = defaultName();
+  bioInput.value = '';
+  setAvatar('');
+  const { data, error } = await sb.from('profiles')
+    .select('nickname,bio,avatar_path,updated_at')
+    .eq('id', currentUser.id)
+    .maybeSingle();
+  if (error) {
+    profileMessage.textContent = 'خواندن پروفایل ممکن نشد: ' + error.message;
+    return;
+  }
+  if (data) {
+    nicknameInput.value = data.nickname || defaultName();
+    bioInput.value = data.bio || '';
+    setAvatar(avatarUrl(data.avatar_path, data.updated_at));
+  }
+  profileMessage.textContent = '';
+}
+
+profileAvatarImg.addEventListener('error', () => {
+  profileAvatarImg.hidden = true;
+  profileInitial.hidden = false;
+});
+document.getElementById('closeProfile').addEventListener('click', closeProfile);
+profileModal.addEventListener('click', event => { if (event.target === profileModal) closeProfile(); });
+document.addEventListener('keydown', event => { if (event.key === 'Escape') closeProfile(); });
+document.getElementById('avatarPick').addEventListener('click', () => avatarInput.click());
+document.getElementById('profileLogout').addEventListener('click', async () => {
+  if (sb) await sb.auth.signOut();
+  closeProfile();
+});
+
+profileForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  if (!sb || !currentUser) return;
+  const nickname = nicknameInput.value.trim();
+  const bio = bioInput.value.trim();
+  if (nickname.length > 24 || bio.length > 200) {
+    profileMessage.textContent = 'اسم حداکثر ۲۴ و توضیح حداکثر ۲۰۰ کاراکتر باشد.';
+    return;
+  }
+  profileSave.disabled = true;
+  profileMessage.textContent = 'در حال ذخیره...';
+  const { error } = await sb.from('profiles').upsert({
+    id: currentUser.id,
+    nickname: nickname || null,
+    bio: bio || null,
+    updated_at: new Date().toISOString()
+  });
+  profileSave.disabled = false;
+  profileMessage.textContent = error ? 'ذخیره نشد: ' + error.message : 'پروفایل ذخیره شد ✓';
+});
+
+avatarInput.addEventListener('change', async () => {
+  const file = avatarInput.files[0];
+  avatarInput.value = '';
+  if (!file || !sb || !currentUser) return;
+  if (!AVATAR_TYPES.includes(file.type)) {
+    profileMessage.textContent = 'فقط عکس JPG، PNG یا WebP قابل قبول است.';
+    return;
+  }
+  if (file.size > AVATAR_MAX_BYTES) {
+    profileMessage.textContent = 'حجم عکس نباید بیشتر از ۵ مگابایت باشد.';
+    return;
+  }
+  profileMessage.textContent = 'در حال آپلود عکس...';
+  try {
+    const blob = await resizeToSquare(file, 256);
+    const path = currentUser.id + '/avatar.jpg';
+    const up = await sb.storage.from('avatars').upload(path, blob, { upsert: true, contentType: 'image/jpeg', cacheControl: '3600' });
+    if (up.error) throw up.error;
+    const stamp = new Date().toISOString();
+    const saved = await sb.from('profiles').upsert({ id: currentUser.id, avatar_path: path, updated_at: stamp });
+    if (saved.error) throw saved.error;
+    setAvatar(avatarUrl(path, stamp));
+    profileMessage.textContent = 'عکس ذخیره شد ✓';
+  } catch (error) {
+    profileMessage.textContent = 'آپلود عکس ناموفق بود: ' + (error.message || 'خطای نامشخص');
   }
 });
 

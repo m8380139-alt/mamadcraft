@@ -23,3 +23,14 @@
 .lightbox-close:hover,.lightbox-nav:hover{border-color:var(--green);color:var(--green)}
 @media(max-width:850px){.gallery-grid{grid-template-columns:repeat(2,1fr)}.gallery-wide{aspect-ratio:16/7}}
 @media(max-width:600px){.gallery-grid{grid-template-columns:1fr;gap:12px}.gallery-wide{aspect-ratio:16/10}.lightbox-nav{top:auto;bottom:18px;transform:none}}
+
+.profile-avatar{position:relative;width:96px;height:96px;margin:6px auto 12px;border-radius:50%;overflow:hidden;display:grid;place-items:center;border:2px solid var(--green);background:#c43dff1f;box-shadow:0 0 24px #55ff8a22}
+.profile-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.profile-avatar img[hidden],.profile-avatar span[hidden]{display:none}
+.profile-avatar span{font:900 38px 'Orbitron',sans-serif;color:var(--green)}
+.avatar-pick{display:block;margin:0 auto;padding:8px 18px;font-size:13px;cursor:pointer}
+#profileForm{text-align:right}
+#profileForm label{display:block;font-size:12px;color:#e1d8ef;margin:13px 0 7px}
+#profileForm input,#profileForm textarea{width:100%;border:1px solid #ffffff20;border-radius:10px;background:#080611;color:white;padding:12px;outline:none;direction:rtl;font:inherit;resize:vertical}
+#profileForm input:focus,#profileForm textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px #55ff8a13}
+.profile-logout{width:100%;margin-top:12px;font-size:13px;cursor:pointer}

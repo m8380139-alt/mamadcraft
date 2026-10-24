@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800;900&family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=3" />
 </head>
 <body>
   <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
@@ -86,6 +86,26 @@
     </section>
   </div>
 
+  <div class="modal-backdrop" id="profileModal" hidden>
+    <section class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
+      <button class="modal-close" id="closeProfile" type="button" aria-label="بستن">×</button>
+      <span class="section-kicker">MAMADCRAFT PROFILE</span><h2 id="profileTitle">پروفایل من</h2>
+      <p class="modal-note" id="profileEmail"></p>
+      <div class="profile-avatar"><img id="profileAvatarImg" alt="عکس پروفایل" hidden><span id="profileInitial">?</span></div>
+      <button class="button button-ghost avatar-pick" id="avatarPick" type="button">انتخاب عکس</button>
+      <input id="avatarInput" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+      <form id="profileForm">
+        <label for="nickname">اسم داخل بازی</label>
+        <input id="nickname" maxlength="24" placeholder="مثلاً Steve123" autocomplete="off">
+        <label for="bio">درباره من</label>
+        <textarea id="bio" maxlength="200" rows="3" placeholder="یه توضیح کوتاه دربارهٔ خودت (حداکثر ۲۰۰ کاراکتر)"></textarea>
+        <button class="button button-primary auth-submit" type="submit" id="profileSave">ذخیره</button>
+        <p class="form-message" id="profileMessage" aria-live="polite"></p>
+      </form>
+      <button class="button button-ghost profile-logout" id="profileLogout" type="button">خروج از حساب</button>
+    </section>
+  </div>
+
   <div class="lightbox" id="lightbox" hidden>
     <button class="lightbox-close" id="lightboxClose" type="button" aria-label="بستن">×</button>
     <button class="lightbox-nav lightbox-prev" id="lightboxPrev" type="button" aria-label="قبلی">›</button>
@@ -94,6 +114,6 @@
     <p class="lightbox-caption" id="lightboxCaption"></p>
   </div>
 
-  <script src="script.js"></script>
+  <script src="script.js?v=3"></script>
 </body>
 </html>
