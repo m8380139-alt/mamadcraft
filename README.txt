@@ -3,7 +3,8 @@ MamadCraft website starter
 Files:
 - index.html: page structure and content
 - style.css: colors, layout, responsive styling
-- script.js: server copy button and demo login/register modal
+- script.js: server copy button, login/register (Supabase), gallery viewer
+- images/: gallery photos
 
 Run locally:
 1. Extract the ZIP.
@@ -18,5 +19,3 @@ Publish with GitHub Pages:
 5. Choose branch main and folder /(root), then Save.
 6. Wait a little and open the published URL shown in Settings > Pages.
 
-Important:
-The login/register panel is a visual demo only. It does not authenticate users or store/send credentials. Do not enter real passwords. A real account system needs a backend/auth provider and security work; static GitHub Pages alone cannot safely store user passwords.

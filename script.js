@@ -139,3 +139,40 @@ loadSupabaseFrom([
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
   'https://unpkg.com/@supabase/supabase-js@2'
 ]);
+
+// ---------- Gallery lightbox ----------
+(function () {
+  const items = Array.from(document.querySelectorAll('.gallery-item'));
+  const box = document.getElementById('lightbox');
+  if (!items.length || !box) return;
+  const img = document.getElementById('lightboxImg');
+  const cap = document.getElementById('lightboxCaption');
+  let index = 0;
+  function show(i) {
+    index = (i + items.length) % items.length;
+    const src = items[index].querySelector('img');
+    img.src = src.src;
+    img.alt = src.alt;
+    cap.textContent = items[index].querySelector('.gallery-caption').textContent;
+  }
+  function open(i) {
+    show(i);
+    box.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+  function close() {
+    box.hidden = true;
+    document.body.style.overflow = '';
+  }
+  items.forEach((item, i) => item.addEventListener('click', () => open(i)));
+  document.getElementById('lightboxClose').addEventListener('click', close);
+  document.getElementById('lightboxPrev').addEventListener('click', () => show(index - 1));
+  document.getElementById('lightboxNext').addEventListener('click', () => show(index + 1));
+  box.addEventListener('click', e => { if (e.target === box) close(); });
+  document.addEventListener('keydown', e => {
+    if (box.hidden) return;
+    if (e.key === 'Escape') close();
+    if (e.key === 'ArrowRight') show(index - 1);
+    if (e.key === 'ArrowLeft') show(index + 1);
+  });
+})();

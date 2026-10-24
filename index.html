@@ -17,7 +17,7 @@
   <header class="topbar">
     <a class="brand" href="#home" aria-label="MamadCraft home"><span class="brand-mark">M</span><span>MAMAD<span class="brand-green">CRAFT</span></span></a>
     <nav class="nav-links" aria-label="منوی اصلی">
-      <a href="#home">خانه</a><a href="#server">سرور</a><a href="#features">امکانات</a><a href="https://www.aparat.com/mohammadkingxddd" target="_blank" rel="noopener noreferrer">چنل آپارات ↗</a><a href="https://rubika.ir/mamaddcraft" target="_blank" rel="noopener noreferrer">کانال روبیکا ↗</a>
+      <a href="#home">خانه</a><a href="#server">سرور</a><a href="#features">امکانات</a><a href="#gallery">گالری</a><a href="https://www.aparat.com/mohammadkingxddd" target="_blank" rel="noopener noreferrer">چنل آپارات ↗</a><a href="https://rubika.ir/mamaddcraft" target="_blank" rel="noopener noreferrer">کانال روبیکا ↗</a>
     </nav>
     <button class="login-open" id="openAuth">ورود / ثبت‌نام ↗</button>
   </header>
@@ -53,6 +53,16 @@
       </div>
     </section>
 
+    <section class="gallery-section wrap" id="gallery">
+      <div class="section-heading"><div><span class="section-kicker">SCREENSHOTS</span><h2>گالری ممدکرفت</h2></div></div>
+      <div class="gallery-grid">
+        <button class="gallery-item gallery-wide" type="button"><img src="images/sunset-panorama.jpg" alt="غروب و دهکده‌ای کنار کوهستان" loading="lazy"><span class="gallery-caption">غروب بالای دهکده</span></button>
+        <button class="gallery-item" type="button"><img src="images/sunset-lake.jpg" alt="غروب کنار دریاچه و ورودی ندر" loading="lazy"><span class="gallery-caption">غروب کنار دریاچه</span></button>
+        <button class="gallery-item" type="button"><img src="images/night-castle.jpg" alt="قلعهٔ شبانه روی صخره" loading="lazy"><span class="gallery-caption">قلعهٔ شب</span></button>
+        <button class="gallery-item" type="button"><img src="images/day-village.jpg" alt="دهکده و مزرعه کنار دریاچه" loading="lazy"><span class="gallery-caption">دهکدهٔ کنار دریاچه</span></button>
+      </div>
+    </section>
+
     <section class="aparat-section wrap">
       <div class="aparat-symbol">▶</div><div class="aparat-copy"><span class="section-kicker">VIDEOS • GAMEPLAY • MORE</span><h2>ما رو توی آپارات دنبال کن</h2><p>ویدیوها و ماجراجویی‌های ممدکرفت رو از دست نده.</p></div><a class="button button-aparat" href="https://www.aparat.com/mohammadkingxddd" target="_blank" rel="noopener noreferrer">رفتن به چنل آپارات ↗</a>
     </section>
@@ -74,6 +84,14 @@
       </form>
       <p class="security-warning">🔒 رمز عبور تو به‌صورت امن و رمزنگاری‌شده ذخیره می‌شود.</p>
     </section>
+  </div>
+
+  <div class="lightbox" id="lightbox" hidden>
+    <button class="lightbox-close" id="lightboxClose" type="button" aria-label="بستن">×</button>
+    <button class="lightbox-nav lightbox-prev" id="lightboxPrev" type="button" aria-label="قبلی">›</button>
+    <img id="lightboxImg" alt="">
+    <button class="lightbox-nav lightbox-next" id="lightboxNext" type="button" aria-label="بعدی">‹</button>
+    <p class="lightbox-caption" id="lightboxCaption"></p>
   </div>
 
   <script src="script.js"></script>
