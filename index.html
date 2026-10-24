@@ -10,14 +10,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800;900&family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=3" />
+  <link rel="stylesheet" href="style.css?v=4" />
 </head>
 <body>
   <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
   <header class="topbar">
     <a class="brand" href="#home" aria-label="MamadCraft home"><span class="brand-mark">M</span><span>MAMAD<span class="brand-green">CRAFT</span></span></a>
     <nav class="nav-links" aria-label="منوی اصلی">
-      <a href="#home">خانه</a><a href="#server">سرور</a><a href="#features">امکانات</a><a href="#gallery">گالری</a><a href="https://www.aparat.com/mohammadkingxddd" target="_blank" rel="noopener noreferrer">چنل آپارات ↗</a><a href="https://rubika.ir/mamaddcraft" target="_blank" rel="noopener noreferrer">کانال روبیکا ↗</a>
+      <a href="#home">خانه</a><a href="#server">سرور</a><a href="#features">امکانات</a><a href="#gallery">گالری</a><a href="#chat">چت</a><a href="https://www.aparat.com/mohammadkingxddd" target="_blank" rel="noopener noreferrer">چنل آپارات ↗</a><a href="https://rubika.ir/mamaddcraft" target="_blank" rel="noopener noreferrer">کانال روبیکا ↗</a>
     </nav>
     <button class="login-open" id="openAuth">ورود / ثبت‌نام ↗</button>
   </header>
@@ -60,6 +60,24 @@
         <button class="gallery-item" type="button"><img src="images/sunset-lake.jpg" alt="غروب کنار دریاچه و ورودی ندر" loading="lazy"><span class="gallery-caption">غروب کنار دریاچه</span></button>
         <button class="gallery-item" type="button"><img src="images/night-castle.jpg" alt="قلعهٔ شبانه روی صخره" loading="lazy"><span class="gallery-caption">قلعهٔ شب</span></button>
         <button class="gallery-item" type="button"><img src="images/day-village.jpg" alt="دهکده و مزرعه کنار دریاچه" loading="lazy"><span class="gallery-caption">دهکدهٔ کنار دریاچه</span></button>
+      </div>
+    </section>
+
+    <section class="chat-section wrap" id="chat">
+      <div class="section-heading"><div><span class="section-kicker">COMMUNITY CHAT</span><h2>چت بازیکن‌ها</h2></div><span class="live-pill"><i></i> زنده</span></div>
+      <div class="chat-card">
+        <div class="chat-locked" id="chatLocked">
+          <p>برای دیدن و نوشتن توی چت، اول وارد حسابت شو.</p>
+          <button class="button button-primary" id="chatLogin" type="button">ورود / ثبت‌نام</button>
+        </div>
+        <div class="chat-box" id="chatBox" hidden>
+          <div class="chat-list" id="chatList" aria-live="polite"></div>
+          <form class="chat-form" id="chatForm" autocomplete="off">
+            <input id="chatInput" maxlength="300" placeholder="یه پیام بنویس..." aria-label="پیام">
+            <button class="button button-primary" id="chatSend" type="submit">ارسال</button>
+          </form>
+          <p class="form-message" id="chatMessage" aria-live="polite"></p>
+        </div>
       </div>
     </section>
 
@@ -114,6 +132,6 @@
     <p class="lightbox-caption" id="lightboxCaption"></p>
   </div>
 
-  <script src="script.js?v=3"></script>
+  <script src="script.js?v=4"></script>
 </body>
 </html>

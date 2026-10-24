@@ -76,6 +76,7 @@ function updateUserUI(user) {
     openAuth.textContent = 'ورود / ثبت‌نام ↗';
     if (typeof closeProfile === 'function') closeProfile();
   }
+  if (typeof onChatAuth === 'function') onChatAuth(user);
 }
 function translateError(message) {
   if (message.includes('Invalid login credentials')) return 'ایمیل یا رمز عبور اشتباه است.';
@@ -282,6 +283,178 @@ avatarInput.addEventListener('change', async () => {
   } catch (error) {
     profileMessage.textContent = 'آپلود عکس ناموفق بود: ' + (error.message || 'خطای نامشخص');
   }
+});
+
+// ---------- Chat ----------
+const chatLocked = document.getElementById('chatLocked');
+const chatBox = document.getElementById('chatBox');
+const chatList = document.getElementById('chatList');
+const chatForm = document.getElementById('chatForm');
+const chatInput = document.getElementById('chatInput');
+const chatSend = document.getElementById('chatSend');
+const chatMessage = document.getElementById('chatMessage');
+const CHAT_LIMIT = 60;
+const CHAT_MAX_DOM = 200;
+let chatChannel = null;
+let chatPoll = null;
+let chatRealtimeOk = false;
+let chatLastId = 0;
+let chatSeen = new Set();
+let chatUserId = null;
+
+function chatError(error) {
+  const m = (error && error.message) || '';
+  if (m.includes('rate_limit_2s')) return 'کمی آهسته‌تر؛ هر ۲ ثانیه فقط یک پیام.';
+  if (m.includes('rate_limit_minute')) return 'تعداد پیام‌هات زیاد بود؛ یک دقیقه صبر کن.';
+  return 'ارسال نشد: ' + m;
+}
+function chatAvatarNode(msg) {
+  const box = document.createElement('div');
+  box.className = 'chat-avatar';
+  const initial = () => { box.textContent = Array.from(msg.author || '?')[0].toUpperCase(); };
+  if (msg.avatar_path && sb) {
+    const img = document.createElement('img');
+    img.alt = '';
+    img.loading = 'lazy';
+    img.src = sb.storage.from('avatars').getPublicUrl(msg.avatar_path).data.publicUrl;
+    img.addEventListener('error', () => { img.remove(); initial(); });
+    box.appendChild(img);
+  } else {
+    initial();
+  }
+  return box;
+}
+function chatNearBottom() {
+  return chatList.scrollHeight - chatList.scrollTop - chatList.clientHeight < 80;
+}
+function addChatMessage(msg) {
+  if (!msg || chatSeen.has(msg.id)) return;
+  chatSeen.add(msg.id);
+  if (msg.id > chatLastId) chatLastId = msg.id;
+  const empty = chatList.querySelector('.chat-empty');
+  if (empty) empty.remove();
+  const stick = chatNearBottom() || msg.user_id === chatUserId;
+
+  const row = document.createElement('div');
+  row.className = 'chat-msg' + (msg.user_id === chatUserId ? ' mine' : '');
+  row.dataset.id = msg.id;
+  row.appendChild(chatAvatarNode(msg));
+
+  const bubble = document.createElement('div');
+  bubble.className = 'chat-bubble';
+  const meta = document.createElement('div');
+  meta.className = 'chat-meta';
+  const author = document.createElement('span');
+  author.className = 'chat-author';
+  author.textContent = msg.author;
+  const time = document.createElement('span');
+  time.textContent = new Date(msg.created_at).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
+  meta.append(author, time);
+  if (msg.user_id === chatUserId) {
+    const del = document.createElement('button');
+    del.className = 'chat-del';
+    del.type = 'button';
+    del.title = 'حذف پیام';
+    del.textContent = '×';
+    del.addEventListener('click', async () => {
+      const { error } = await sb.from('messages').delete().eq('id', msg.id);
+      if (error) chatMessage.textContent = 'حذف نشد: ' + error.message;
+      else removeChatMessage(msg.id);
+    });
+    meta.appendChild(del);
+  }
+  const text = document.createElement('div');
+  text.className = 'chat-text';
+  text.textContent = msg.content;
+  bubble.append(meta, text);
+  row.appendChild(bubble);
+  chatList.appendChild(row);
+
+  while (chatList.children.length > CHAT_MAX_DOM) chatList.firstElementChild.remove();
+  if (stick) chatList.scrollTop = chatList.scrollHeight;
+}
+function removeChatMessage(id) {
+  const el = chatList.querySelector('[data-id="' + id + '"]');
+  if (el) el.remove();
+}
+async function chatFetchNew() {
+  if (!sb || !chatUserId) return;
+  const { data, error } = await sb.from('messages')
+    .select('id,user_id,author,avatar_path,content,created_at')
+    .gt('id', chatLastId)
+    .order('id', { ascending: true })
+    .limit(100);
+  if (!error && data) data.forEach(addChatMessage);
+}
+async function startChat(user) {
+  chatUserId = user.id;
+  chatLocked.hidden = true;
+  chatBox.hidden = false;
+  chatList.innerHTML = '';
+  chatSeen = new Set();
+  chatLastId = 0;
+  chatMessage.textContent = '';
+  const { data, error } = await sb.from('messages')
+    .select('id,user_id,author,avatar_path,content,created_at')
+    .order('id', { ascending: false })
+    .limit(CHAT_LIMIT);
+  if (error) {
+    chatMessage.textContent = 'خواندن پیام‌ها ممکن نشد: ' + error.message;
+  } else if (!data.length) {
+    const empty = document.createElement('div');
+    empty.className = 'chat-empty';
+    empty.textContent = 'هنوز پیامی نیست؛ اولین نفر باش!';
+    chatList.appendChild(empty);
+  } else {
+    data.reverse().forEach(addChatMessage);
+    chatList.scrollTop = chatList.scrollHeight;
+  }
+  chatChannel = sb.channel('public-chat')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => addChatMessage(payload.new))
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'messages' }, payload => {
+      if (payload.old && payload.old.id) removeChatMessage(payload.old.id);
+    })
+    .subscribe(status => { chatRealtimeOk = status === 'SUBSCRIBED'; });
+  chatPoll = setInterval(() => { if (!chatRealtimeOk) chatFetchNew(); }, 8000);
+}
+function stopChat() {
+  if (chatPoll) clearInterval(chatPoll);
+  chatPoll = null;
+  if (chatChannel && sb) sb.removeChannel(chatChannel);
+  chatChannel = null;
+  chatRealtimeOk = false;
+  chatUserId = null;
+  chatList.innerHTML = '';
+  chatBox.hidden = true;
+  chatLocked.hidden = false;
+}
+function onChatAuth(user) {
+  if (!sb) return;
+  if (user) {
+    if (chatUserId === user.id) return;
+    stopChat();
+    startChat(user);
+  } else if (chatUserId) {
+    stopChat();
+  }
+}
+
+document.getElementById('chatLogin').addEventListener('click', () => openAuth.click());
+chatForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  const content = chatInput.value.trim();
+  if (!content || !sb || !chatUserId) return;
+  chatSend.disabled = true;
+  chatMessage.textContent = '';
+  const { data, error } = await sb.from('messages').insert({ content }).select().single();
+  chatSend.disabled = false;
+  if (error) {
+    chatMessage.textContent = chatError(error);
+    return;
+  }
+  chatInput.value = '';
+  addChatMessage(data);
+  chatInput.focus();
 });
 
 loadSupabaseFrom([
