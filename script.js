@@ -1,4 +1,4 @@
-ُconst SERVER_ADDRESS = 'mohamadkingxddd-srv-foxddd.play.mihancraft.com:25566';
+const SERVER_ADDRESS = 'mohamadkingxddd-srv-foxddd.play.mihancraft.com:25566';
 const copyButton = document.getElementById('copyServer');
 const copyMessage = document.getElementById('copyMessage');
 copyButton.addEventListener('click', async () => {
@@ -13,7 +13,23 @@ copyButton.addEventListener('click', async () => {
 // ---------- Supabase ----------
 const SUPABASE_URL = 'https://yfcuxadgqtkbdlxqnxhk.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_DKzOZkCrI5Q-7EOilFUgyw_8KD3xKZ_';
-const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+let sb = null;
+function initSupabase() {
+  if (sb || !window.supabase) return;
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  sb.auth.getSession().then(({ data }) => updateUserUI(data.session ? data.session.user : null));
+  sb.auth.onAuthStateChange((_event, session) => updateUserUI(session ? session.user : null));
+}
+function loadSupabaseFrom(urls) {
+  if (window.supabase || !urls.length) return;
+  const el = document.createElement('script');
+  el.src = urls[0];
+  el.async = true;
+  el.onload = initSupabase;
+  el.onerror = () => loadSupabaseFrom(urls.slice(1));
+  document.head.appendChild(el);
+  setTimeout(() => { if (!window.supabase) loadSupabaseFrom(urls.slice(1)); }, 6000);
+}
 
 const modal = document.getElementById('authModal');
 const openAuth = document.getElementById('openAuth');
@@ -82,6 +98,7 @@ document.querySelectorAll('.auth-tab').forEach(tab => tab.addEventListener('clic
 
 authForm.addEventListener('submit', async event => {
   event.preventDefault();
+  initSupabase();
   if (!sb) {
     formMessage.textContent = 'اتصال به سرویس ورود برقرار نیست؛ اینترنت یا فیلترشکنت را چک کن و صفحه را دوباره باز کن.';
     return;
@@ -118,7 +135,7 @@ authForm.addEventListener('submit', async event => {
   }
 });
 
-if (sb) {
-  sb.auth.getSession().then(({ data }) => updateUserUI(data.session ? data.session.user : null));
-  sb.auth.onAuthStateChange((_event, session) => updateUserUI(session ? session.user : null));
-}
+loadSupabaseFrom([
+  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
+  'https://unpkg.com/@supabase/supabase-js@2'
+]);
