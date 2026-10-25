@@ -10,47 +10,128 @@ copyButton.addEventListener('click', async () => {
   }
 });
 
-// ---------- Supabase ----------
-const SUPABASE_URL = 'https://yfcuxadgqtkbdlxqnxhk.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_DKzOZkCrI5Q-7EOilFUgyw_8KD3xKZ_';
-let sb = null;
-function initSupabase() {
-  if (sb || !window.supabase) return;
-  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  sb.auth.getSession().then(({ data }) => updateUserUI(data.session ? data.session.user : null));
-  sb.auth.onAuthStateChange((_event, session) => updateUserUI(session ? session.user : null));
+// ---------- Nhost (بدون کتابخانه؛ مستقیم با fetch) ----------
+const NHOST_SUBDOMAIN = 'vvtyudilywndoyxqiqkm';
+const NHOST_REGION = 'eu-central-1';
+const AUTH_URL = 'https://' + NHOST_SUBDOMAIN + '.auth.' + NHOST_REGION + '.nhost.run/v1';
+const GRAPHQL_URL = 'https://' + NHOST_SUBDOMAIN + '.graphql.' + NHOST_REGION + '.nhost.run/v1';
+const FAKE_EMAIL_DOMAIN = 'mamadcraft.example'; // ایمیل ساختگی؛ کاربر فقط نام کاربری می‌بیند
+const SESSION_KEY = 'mamadcraft_session_v1';
+const USERNAME_RE = /^[A-Za-z0-9_]{3,20}$/;
+const NETWORK_MSG = 'اتصال به سرور برقرار نشد؛ اینترنتت را چک کن و دوباره امتحان کن.';
+
+let session = null; // { accessToken, refreshToken, expiresAt, user }
+let refreshTimer = null;
+let refreshPromise = null;
+let currentUser = null;
+
+function usernameToEmail(username) {
+  return username.toLowerCase() + '@' + FAKE_EMAIL_DOMAIN;
 }
-function loadSupabaseFrom(urls) {
-  if (window.supabase) { initSupabase(); return; }
-  if (!urls.length) return;
-  const el = document.createElement('script');
-  el.src = urls[0];
-  el.async = true;
-  el.onload = initSupabase;
-  el.onerror = () => loadSupabaseFrom(urls.slice(1));
-  document.head.appendChild(el);
-  setTimeout(() => { if (!window.supabase) loadSupabaseFrom(urls.slice(1)); }, 6000);
+function isNetworkError(error) {
+  return !!error && /failed to fetch|networkerror|network request failed|load failed/i.test(error.message || '');
+}
+function loadStoredSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+function storeSession(s) {
+  try {
+    if (s) localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+    else localStorage.removeItem(SESSION_KEY);
+  } catch (e) { /* ذخیره‌سازی مرورگر در دسترس نیست */ }
+}
+function normalizeSession(raw) {
+  return {
+    accessToken: raw.accessToken,
+    refreshToken: raw.refreshToken,
+    expiresAt: Date.now() + (raw.accessTokenExpiresIn || 900) * 1000,
+    user: raw.user
+  };
+}
+function applySession(s) {
+  session = s;
+  storeSession(s);
+  clearTimeout(refreshTimer);
+  if (s) {
+    const wait = Math.max(5000, s.expiresAt - Date.now() - 60000);
+    refreshTimer = setTimeout(() => refreshSession().catch(() => {}), wait);
+  }
+  updateUserUI(s ? s.user : null);
 }
 
+async function authRequest(path, body) {
+  const res = await fetch(AUTH_URL + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  let json = null;
+  try { json = await res.json(); } catch (e) { /* بدون بدنه */ }
+  if (!res.ok) {
+    const err = new Error((json && json.message) || res.statusText || 'error');
+    err.code = json && json.error;
+    err.status = res.status;
+    throw err;
+  }
+  return json || {};
+}
+function refreshSession() {
+  if (refreshPromise) return refreshPromise;
+  if (!session) return Promise.resolve();
+  const token = session.refreshToken;
+  refreshPromise = authRequest('/token', { refreshToken: token })
+    .then(data => applySession(normalizeSession(data.session || data)))
+    .catch(error => {
+      if (error.status === 400 || error.status === 401) applySession(null); // نشست منقضی شده
+      throw error;
+    })
+    .finally(() => { refreshPromise = null; });
+  return refreshPromise;
+}
+async function gql(query, variables, retry = true) {
+  if (session && session.expiresAt - Date.now() < 30000) {
+    try { await refreshSession(); } catch (e) { /* ادامه با توکن فعلی */ }
+  }
+  if (!session) throw new Error('not-signed-in');
+  const res = await fetch(GRAPHQL_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + session.accessToken },
+    body: JSON.stringify({ query, variables: variables || {} })
+  });
+  let json = null;
+  try { json = await res.json(); } catch (e) { /* بدون بدنه */ }
+  if (!json) throw new Error('HTTP ' + res.status);
+  if (!json.errors && !json.data) throw new Error(json.error || json.message || ('HTTP ' + res.status));
+  if (json.errors && json.errors.length) {
+    const message = json.errors[0].message || 'error';
+    if (retry && /jwt|expired|unauthor/i.test(message)) {
+      try { await refreshSession(); return gql(query, variables, false); } catch (e) { /* برو پایین */ }
+    }
+    throw new Error(message);
+  }
+  return json.data;
+}
+
+// ---------- Auth UI ----------
 const modal = document.getElementById('authModal');
 const openAuth = document.getElementById('openAuth');
 const closeAuth = document.getElementById('closeAuth');
 const authForm = document.getElementById('authForm');
 const authTitle = document.getElementById('authTitle');
 const authSubmit = document.getElementById('authSubmit');
-const usernameField = document.getElementById('usernameField');
 const usernameInput = document.getElementById('username');
-const emailInput = document.getElementById('email');
 const passwordInput = document.getElementById('password');
 const formMessage = document.getElementById('formMessage');
 let authMode = 'login';
-let currentUser = null;
 
 function showModal() {
   modal.hidden = false;
   document.body.style.overflow = 'hidden';
   formMessage.textContent = '';
-  emailInput.focus();
+  usernameInput.focus();
 }
 function hideModal() {
   modal.hidden = true;
@@ -62,37 +143,36 @@ function setMode(mode) {
   const registering = mode === 'register';
   authTitle.textContent = registering ? 'ساخت حساب کاربری' : 'ورود به حساب';
   authSubmit.textContent = registering ? 'ثبت‌نام' : 'ورود';
-  usernameField.hidden = !registering;
-  usernameInput.required = registering;
   passwordInput.autocomplete = registering ? 'new-password' : 'current-password';
   formMessage.textContent = '';
 }
+function displayNameOf(user) {
+  if (!user) return '';
+  return user.displayName || (user.metadata && user.metadata.username) || String(user.email || '').split('@')[0];
+}
 function updateUserUI(user) {
   currentUser = user;
-  if (user) {
-    const name = (user.user_metadata && user.user_metadata.username) || user.email;
-    openAuth.textContent = name + ' · پروفایل';
-  } else {
-    openAuth.textContent = 'ورود / ثبت‌نام ↗';
-    if (typeof closeProfile === 'function') closeProfile();
-  }
+  openAuth.textContent = user ? displayNameOf(user) + ' · پروفایل' : 'ورود / ثبت‌نام ↗';
+  if (!user && typeof closeProfile === 'function') closeProfile();
   if (typeof onChatAuth === 'function') onChatAuth(user);
 }
-function translateError(message) {
-  if (message.includes('Invalid login credentials')) return 'ایمیل یا رمز عبور اشتباه است.';
-  if (message.includes('already registered')) return 'این ایمیل قبلاً ثبت‌نام کرده است.';
-  if (message.includes('Email not confirmed')) return 'ایمیلت هنوز تأیید نشده؛ صندوق ایمیلت را چک کن.';
-  if (message.includes('Password should be')) return 'رمز عبور خیلی ضعیف است؛ حداقل ۸ کاراکتر بذار.';
-  if (message.includes('rate limit')) return 'تعداد تلاش‌ها زیاد بود؛ چند دقیقه بعد دوباره امتحان کن.';
+function translateAuthError(error) {
+  if (isNetworkError(error)) return NETWORK_MSG;
+  const code = error.code || '';
+  const message = error.message || '';
+  if (code === 'invalid-email-password') return 'نام کاربری یا رمز عبور اشتباه است.';
+  if (code === 'email-already-in-use') return 'این نام کاربری قبلاً گرفته شده؛ یکی دیگر انتخاب کن.';
+  if (code === 'unverified-user') return 'حساب هنوز تأیید نشده (تنظیم «تأیید ایمیل» در Nhost باید خاموش باشد).';
+  if (code === 'signup-disabled') return 'ثبت‌نام فعلاً بسته است.';
+  if (code === 'user-not-found') return 'نام کاربری یا رمز عبور اشتباه است.';
+  if (error.status === 429) return 'تعداد تلاش‌ها زیاد بود؛ چند دقیقه بعد دوباره امتحان کن.';
+  if (/password/i.test(code + ' ' + message)) return 'رمز عبور مناسب نیست؛ حداقل ۹ کاراکتر و کمی پیچیده‌تر بنویس.';
   return 'خطا: ' + message;
 }
 
-openAuth.addEventListener('click', async () => {
-  if (currentUser) {
-    openProfile();
-  } else {
-    showModal();
-  }
+openAuth.addEventListener('click', () => {
+  if (currentUser) openProfile();
+  else showModal();
 });
 closeAuth.addEventListener('click', hideModal);
 modal.addEventListener('click', event => { if (event.target === modal) hideModal(); });
@@ -101,42 +181,49 @@ document.querySelectorAll('.auth-tab').forEach(tab => tab.addEventListener('clic
 
 authForm.addEventListener('submit', async event => {
   event.preventDefault();
-  initSupabase();
-  if (!sb) {
-    formMessage.textContent = 'اتصال به سرویس ورود برقرار نیست؛ اینترنت یا فیلترشکنت را چک کن و صفحه را دوباره باز کن.';
+  const username = usernameInput.value.trim();
+  const password = passwordInput.value;
+  if (!USERNAME_RE.test(username)) {
+    formMessage.textContent = 'نام کاربری باید ۳ تا ۲۰ حرف انگلیسی، عدد یا زیرخط (_) باشد.';
     return;
   }
-  const email = emailInput.value.trim();
-  const password = passwordInput.value;
   authSubmit.disabled = true;
   formMessage.textContent = 'کمی صبر کن...';
   try {
+    const email = usernameToEmail(username);
     if (authMode === 'register') {
-      const { data, error } = await sb.auth.signUp({
+      const data = await authRequest('/signup/email-password', {
         email,
         password,
-        options: { data: { username: usernameInput.value.trim() } }
+        options: { displayName: username, metadata: { username } }
       });
-      if (error) throw error;
       if (data.session) {
+        applySession(normalizeSession(data.session));
         formMessage.textContent = 'ثبت‌نام انجام شد و وارد شدی!';
         setTimeout(hideModal, 900);
       } else {
-        formMessage.textContent = 'ثبت‌نام انجام شد. برای تأیید، ایمیلت را چک کن.';
+        formMessage.textContent = 'ثبت‌نام انجام شد ولی ورود خودکار ممکن نیست؛ از تب «ورود» وارد شو.';
       }
     } else {
-      const { error } = await sb.auth.signInWithPassword({ email, password });
-      if (error) throw error;
+      const data = await authRequest('/signin/email-password', { email, password });
+      if (!data.session) throw Object.assign(new Error('no session'), { code: 'unverified-user' });
+      applySession(normalizeSession(data.session));
       formMessage.textContent = 'با موفقیت وارد شدی!';
       setTimeout(hideModal, 900);
     }
     authForm.reset();
   } catch (error) {
-    formMessage.textContent = translateError(error.message || 'مشکلی پیش آمد');
+    formMessage.textContent = translateAuthError(error);
   } finally {
     authSubmit.disabled = false;
   }
 });
+
+async function signOut() {
+  const token = session && session.refreshToken;
+  applySession(null);
+  if (token) { try { await authRequest('/signout', { refreshToken: token, all: false }); } catch (e) { /* مهم نیست */ } }
+}
 
 // ---------- Profile ----------
 const profileModal = document.getElementById('profileModal');
@@ -151,18 +238,26 @@ const profileSave = document.getElementById('profileSave');
 const profileMessage = document.getElementById('profileMessage');
 const AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
+const AVATAR_PREFIX = 'data:image/jpeg;base64,';
 
+function gqlErrorText(error, fallback) {
+  if (isNetworkError(error)) return NETWORK_MSG;
+  const m = (error && error.message) || '';
+  if (/not found in type|field .* not found|no such table|relation .* does not exist/i.test(m)) {
+    return 'جدول‌های دیتابیس هنوز ساخته نشده‌اند (مرحلهٔ راه‌اندازی Nhost).';
+  }
+  return fallback + m;
+}
+function safeAvatar(url) {
+  return (typeof url === 'string' && url.startsWith(AVATAR_PREFIX) && url.length <= 30000) ? url : '';
+}
 function closeProfile() {
   if (!profileModal || profileModal.hidden) return;
   profileModal.hidden = true;
   document.body.style.overflow = '';
 }
-function defaultName() {
-  if (!currentUser) return '';
-  return (currentUser.user_metadata && currentUser.user_metadata.username) || currentUser.email || '';
-}
 function setAvatar(url) {
-  const label = nicknameInput.value.trim() || defaultName() || '?';
+  const label = nicknameInput.value.trim() || displayNameOf(currentUser) || '?';
   profileInitial.textContent = Array.from(label)[0].toUpperCase();
   if (url) {
     profileAvatarImg.src = url;
@@ -173,11 +268,6 @@ function setAvatar(url) {
     profileAvatarImg.hidden = true;
     profileInitial.hidden = false;
   }
-}
-function avatarUrl(path, stamp) {
-  if (!path || !sb) return '';
-  const { data } = sb.storage.from('avatars').getPublicUrl(path);
-  return data.publicUrl + '?v=' + encodeURIComponent(stamp || Date.now());
 }
 function resizeToSquare(file, size) {
   return new Promise((resolve, reject) => {
@@ -192,35 +282,40 @@ function resizeToSquare(file, size) {
       ctx.fillRect(0, 0, size, size);
       ctx.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, size, size);
       URL.revokeObjectURL(url);
-      canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('resize failed')), 'image/jpeg', 0.85);
+      resolve(canvas.toDataURL('image/jpeg', 0.75));
     };
     img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('bad image')); };
     img.src = url;
   });
 }
+async function saveProfile(fields) {
+  await gql(
+    'mutation($o: profiles_insert_input!, $cols: [profiles_update_column!]!) {' +
+    ' insert_profiles_one(object: $o, on_conflict: {constraint: profiles_pkey, update_columns: $cols}) { id } }',
+    { o: fields, cols: Object.keys(fields) }
+  );
+}
 async function openProfile() {
-  if (!currentUser || !sb) return;
+  if (!currentUser) return;
   profileModal.hidden = false;
   document.body.style.overflow = 'hidden';
-  profileEmail.textContent = currentUser.email || '';
+  profileEmail.textContent = 'نام کاربری: ' + displayNameOf(currentUser);
   profileMessage.textContent = 'کمی صبر کن...';
-  nicknameInput.value = defaultName();
+  nicknameInput.value = displayNameOf(currentUser);
   bioInput.value = '';
   setAvatar('');
-  const { data, error } = await sb.from('profiles')
-    .select('nickname,bio,avatar_path,updated_at')
-    .eq('id', currentUser.id)
-    .maybeSingle();
-  if (error) {
-    profileMessage.textContent = 'خواندن پروفایل ممکن نشد: ' + error.message;
-    return;
+  try {
+    const data = await gql('query($id: uuid!) { profiles_by_pk(id: $id) { nickname bio avatar } }', { id: currentUser.id });
+    const p = data.profiles_by_pk;
+    if (p) {
+      nicknameInput.value = p.nickname || displayNameOf(currentUser);
+      bioInput.value = p.bio || '';
+      setAvatar(safeAvatar(p.avatar));
+    }
+    profileMessage.textContent = '';
+  } catch (error) {
+    profileMessage.textContent = gqlErrorText(error, 'خواندن پروفایل ممکن نشد: ');
   }
-  if (data) {
-    nicknameInput.value = data.nickname || defaultName();
-    bioInput.value = data.bio || '';
-    setAvatar(avatarUrl(data.avatar_path, data.updated_at));
-  }
-  profileMessage.textContent = '';
 }
 
 profileAvatarImg.addEventListener('error', () => {
@@ -232,13 +327,13 @@ profileModal.addEventListener('click', event => { if (event.target === profileMo
 document.addEventListener('keydown', event => { if (event.key === 'Escape') closeProfile(); });
 document.getElementById('avatarPick').addEventListener('click', () => avatarInput.click());
 document.getElementById('profileLogout').addEventListener('click', async () => {
-  if (sb) await sb.auth.signOut();
   closeProfile();
+  await signOut();
 });
 
 profileForm.addEventListener('submit', async event => {
   event.preventDefault();
-  if (!sb || !currentUser) return;
+  if (!currentUser) return;
   const nickname = nicknameInput.value.trim();
   const bio = bioInput.value.trim();
   if (nickname.length > 24 || bio.length > 200) {
@@ -247,20 +342,20 @@ profileForm.addEventListener('submit', async event => {
   }
   profileSave.disabled = true;
   profileMessage.textContent = 'در حال ذخیره...';
-  const { error } = await sb.from('profiles').upsert({
-    id: currentUser.id,
-    nickname: nickname || null,
-    bio: bio || null,
-    updated_at: new Date().toISOString()
-  });
-  profileSave.disabled = false;
-  profileMessage.textContent = error ? 'ذخیره نشد: ' + error.message : 'پروفایل ذخیره شد ✓';
+  try {
+    await saveProfile({ nickname: nickname || null, bio: bio || null });
+    profileMessage.textContent = 'پروفایل ذخیره شد ✓';
+  } catch (error) {
+    profileMessage.textContent = gqlErrorText(error, 'ذخیره نشد: ');
+  } finally {
+    profileSave.disabled = false;
+  }
 });
 
 avatarInput.addEventListener('change', async () => {
   const file = avatarInput.files[0];
   avatarInput.value = '';
-  if (!file || !sb || !currentUser) return;
+  if (!file || !currentUser) return;
   if (!AVATAR_TYPES.includes(file.type)) {
     profileMessage.textContent = 'فقط عکس JPG، PNG یا WebP قابل قبول است.';
     return;
@@ -269,19 +364,16 @@ avatarInput.addEventListener('change', async () => {
     profileMessage.textContent = 'حجم عکس نباید بیشتر از ۵ مگابایت باشد.';
     return;
   }
-  profileMessage.textContent = 'در حال آپلود عکس...';
+  profileMessage.textContent = 'در حال ذخیره عکس...';
   try {
-    const blob = await resizeToSquare(file, 256);
-    const path = currentUser.id + '/avatar.jpg';
-    const up = await sb.storage.from('avatars').upload(path, blob, { upsert: true, contentType: 'image/jpeg', cacheControl: '3600' });
-    if (up.error) throw up.error;
-    const stamp = new Date().toISOString();
-    const saved = await sb.from('profiles').upsert({ id: currentUser.id, avatar_path: path, updated_at: stamp });
-    if (saved.error) throw saved.error;
-    setAvatar(avatarUrl(path, stamp));
+    const dataUrl = await resizeToSquare(file, 128);
+    if (!safeAvatar(dataUrl)) throw new Error('عکس قابل استفاده نیست');
+    await saveProfile({ avatar: dataUrl });
+    avatarCache.set(currentUser.id, dataUrl);
+    setAvatar(dataUrl);
     profileMessage.textContent = 'عکس ذخیره شد ✓';
   } catch (error) {
-    profileMessage.textContent = 'آپلود عکس ناموفق بود: ' + (error.message || 'خطای نامشخص');
+    profileMessage.textContent = gqlErrorText(error, 'ذخیرهٔ عکس ناموفق بود: ');
   }
 });
 
@@ -295,28 +387,41 @@ const chatSend = document.getElementById('chatSend');
 const chatMessage = document.getElementById('chatMessage');
 const CHAT_LIMIT = 60;
 const CHAT_MAX_DOM = 200;
-let chatChannel = null;
+const CHAT_POLL_MS = 3000;
+const MSG_FIELDS = 'id user_id author content created_at';
+const avatarCache = new Map();
 let chatPoll = null;
-let chatRealtimeOk = false;
+let chatBusy = false;
 let chatLastId = 0;
 let chatSeen = new Set();
 let chatUserId = null;
 
 function chatError(error) {
+  if (isNetworkError(error)) return NETWORK_MSG;
   const m = (error && error.message) || '';
   if (m.includes('rate_limit_2s')) return 'کمی آهسته‌تر؛ هر ۲ ثانیه فقط یک پیام.';
   if (m.includes('rate_limit_minute')) return 'تعداد پیام‌هات زیاد بود؛ یک دقیقه صبر کن.';
-  return 'ارسال نشد: ' + m;
+  return gqlErrorText(error, 'ارسال نشد: ');
+}
+async function ensureAvatars(ids) {
+  const need = Array.from(new Set(ids)).filter(id => !avatarCache.has(id));
+  if (!need.length) return;
+  try {
+    const data = await gql('query($ids: [uuid!]!) { profiles(where: {id: {_in: $ids}}) { id avatar } }', { ids: need });
+    const found = new Set();
+    data.profiles.forEach(p => { avatarCache.set(p.id, safeAvatar(p.avatar)); found.add(p.id); });
+    need.forEach(id => { if (!found.has(id)) avatarCache.set(id, ''); });
+  } catch (e) { /* بدون عکس نشان داده می‌شود */ }
 }
 function chatAvatarNode(msg) {
   const box = document.createElement('div');
   box.className = 'chat-avatar';
   const initial = () => { box.textContent = Array.from(msg.author || '?')[0].toUpperCase(); };
-  if (msg.avatar_path && sb) {
+  const url = avatarCache.get(msg.user_id);
+  if (url) {
     const img = document.createElement('img');
     img.alt = '';
-    img.loading = 'lazy';
-    img.src = sb.storage.from('avatars').getPublicUrl(msg.avatar_path).data.publicUrl;
+    img.src = url;
     img.addEventListener('error', () => { img.remove(); initial(); });
     box.appendChild(img);
   } else {
@@ -327,16 +432,19 @@ function chatAvatarNode(msg) {
 function chatNearBottom() {
   return chatList.scrollHeight - chatList.scrollTop - chatList.clientHeight < 80;
 }
-function addChatMessage(msg) {
-  if (!msg || chatSeen.has(msg.id)) return;
+function addChatMessage(raw) {
+  if (!raw) return;
+  const msg = Object.assign({}, raw, { id: Number(raw.id) });
+  if (chatSeen.has(msg.id)) return;
   chatSeen.add(msg.id);
   if (msg.id > chatLastId) chatLastId = msg.id;
   const empty = chatList.querySelector('.chat-empty');
   if (empty) empty.remove();
-  const stick = chatNearBottom() || msg.user_id === chatUserId;
+  const mine = msg.user_id === chatUserId;
+  const stick = chatNearBottom() || mine;
 
   const row = document.createElement('div');
-  row.className = 'chat-msg' + (msg.user_id === chatUserId ? ' mine' : '');
+  row.className = 'chat-msg' + (mine ? ' mine' : '');
   row.dataset.id = msg.id;
   row.appendChild(chatAvatarNode(msg));
 
@@ -350,16 +458,19 @@ function addChatMessage(msg) {
   const time = document.createElement('span');
   time.textContent = new Date(msg.created_at).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
   meta.append(author, time);
-  if (msg.user_id === chatUserId) {
+  if (mine) {
     const del = document.createElement('button');
     del.className = 'chat-del';
     del.type = 'button';
     del.title = 'حذف پیام';
     del.textContent = '×';
     del.addEventListener('click', async () => {
-      const { error } = await sb.from('messages').delete().eq('id', msg.id);
-      if (error) chatMessage.textContent = 'حذف نشد: ' + error.message;
-      else removeChatMessage(msg.id);
+      try {
+        await gql('mutation($id: bigint!) { delete_messages_by_pk(id: $id) { id } }', { id: msg.id });
+        row.remove();
+      } catch (error) {
+        chatMessage.textContent = gqlErrorText(error, 'حذف نشد: ');
+      }
     });
     meta.appendChild(del);
   }
@@ -373,18 +484,23 @@ function addChatMessage(msg) {
   while (chatList.children.length > CHAT_MAX_DOM) chatList.firstElementChild.remove();
   if (stick) chatList.scrollTop = chatList.scrollHeight;
 }
-function removeChatMessage(id) {
-  const el = chatList.querySelector('[data-id="' + id + '"]');
-  if (el) el.remove();
-}
 async function chatFetchNew() {
-  if (!sb || !chatUserId) return;
-  const { data, error } = await sb.from('messages')
-    .select('id,user_id,author,avatar_path,content,created_at')
-    .gt('id', chatLastId)
-    .order('id', { ascending: true })
-    .limit(100);
-  if (!error && data) data.forEach(addChatMessage);
+  if (chatBusy || !currentUser || !chatUserId) return;
+  chatBusy = true;
+  try {
+    const data = await gql(
+      'query($last: bigint!) { messages(where: {id: {_gt: $last}}, order_by: {id: asc}, limit: 100) { ' + MSG_FIELDS + ' } }',
+      { last: chatLastId }
+    );
+    // پیام‌هایی که دیگران پاک کرده‌اند با رفرش شدن لیست حذف می‌شوند
+    await ensureAvatars(data.messages.map(m => m.user_id));
+    data.messages.forEach(addChatMessage);
+    if (chatMessage.textContent === NETWORK_MSG) chatMessage.textContent = '';
+  } catch (error) {
+    if (isNetworkError(error)) chatMessage.textContent = NETWORK_MSG;
+  } finally {
+    chatBusy = false;
+  }
 }
 async function startChat(user) {
   chatUserId = user.id;
@@ -394,42 +510,38 @@ async function startChat(user) {
   chatSeen = new Set();
   chatLastId = 0;
   chatMessage.textContent = '';
-  const { data, error } = await sb.from('messages')
-    .select('id,user_id,author,avatar_path,content,created_at')
-    .order('id', { ascending: false })
-    .limit(CHAT_LIMIT);
-  if (error) {
-    chatMessage.textContent = 'خواندن پیام‌ها ممکن نشد: ' + error.message;
-  } else if (!data.length) {
-    const empty = document.createElement('div');
-    empty.className = 'chat-empty';
-    empty.textContent = 'هنوز پیامی نیست؛ اولین نفر باش!';
-    chatList.appendChild(empty);
-  } else {
-    data.reverse().forEach(addChatMessage);
-    chatList.scrollTop = chatList.scrollHeight;
+  try {
+    const data = await gql(
+      'query($n: Int!) { messages(order_by: {id: desc}, limit: $n) { ' + MSG_FIELDS + ' } }',
+      { n: CHAT_LIMIT }
+    );
+    if (chatUserId !== user.id) return;
+    if (!data.messages.length) {
+      const empty = document.createElement('div');
+      empty.className = 'chat-empty';
+      empty.textContent = 'هنوز پیامی نیست؛ اولین نفر باش!';
+      chatList.appendChild(empty);
+    } else {
+      const list = data.messages.slice().reverse();
+      await ensureAvatars(list.map(m => m.user_id));
+      list.forEach(addChatMessage);
+      chatList.scrollTop = chatList.scrollHeight;
+    }
+  } catch (error) {
+    chatMessage.textContent = gqlErrorText(error, 'خواندن پیام‌ها ممکن نشد: ');
   }
-  chatChannel = sb.channel('public-chat')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => addChatMessage(payload.new))
-    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'messages' }, payload => {
-      if (payload.old && payload.old.id) removeChatMessage(payload.old.id);
-    })
-    .subscribe(status => { chatRealtimeOk = status === 'SUBSCRIBED'; });
-  chatPoll = setInterval(() => { if (!chatRealtimeOk) chatFetchNew(); }, 8000);
+  clearInterval(chatPoll);
+  chatPoll = setInterval(() => { if (!document.hidden) chatFetchNew(); }, CHAT_POLL_MS);
 }
 function stopChat() {
-  if (chatPoll) clearInterval(chatPoll);
+  clearInterval(chatPoll);
   chatPoll = null;
-  if (chatChannel && sb) sb.removeChannel(chatChannel);
-  chatChannel = null;
-  chatRealtimeOk = false;
   chatUserId = null;
   chatList.innerHTML = '';
   chatBox.hidden = true;
   chatLocked.hidden = false;
 }
 function onChatAuth(user) {
-  if (!sb) return;
   if (user) {
     if (chatUserId === user.id) return;
     stopChat();
@@ -443,24 +555,24 @@ document.getElementById('chatLogin').addEventListener('click', () => openAuth.cl
 chatForm.addEventListener('submit', async event => {
   event.preventDefault();
   const content = chatInput.value.trim();
-  if (!content || !sb || !chatUserId) return;
+  if (!content || !currentUser || !chatUserId) return;
   chatSend.disabled = true;
   chatMessage.textContent = '';
-  const { data, error } = await sb.from('messages').insert({ content }).select().single();
-  chatSend.disabled = false;
-  if (error) {
+  try {
+    const data = await gql(
+      'mutation($c: String!) { insert_messages_one(object: {content: $c}) { ' + MSG_FIELDS + ' } }',
+      { c: content }
+    );
+    chatInput.value = '';
+    avatarCache.has(chatUserId) || await ensureAvatars([chatUserId]);
+    addChatMessage(data.insert_messages_one);
+    chatInput.focus();
+  } catch (error) {
     chatMessage.textContent = chatError(error);
-    return;
+  } finally {
+    chatSend.disabled = false;
   }
-  chatInput.value = '';
-  addChatMessage(data);
-  chatInput.focus();
 });
-
-loadSupabaseFrom([
-  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
-  'https://unpkg.com/@supabase/supabase-js@2'
-]);
 
 // ---------- Gallery lightbox ----------
 (function () {
@@ -497,4 +609,16 @@ loadSupabaseFrom([
     if (e.key === 'ArrowRight') show(index - 1);
     if (e.key === 'ArrowLeft') show(index + 1);
   });
+})();
+
+// ---------- شروع: بازیابی نشست قبلی ----------
+(function initSession() {
+  const stored = loadStoredSession();
+  if (!stored || !stored.refreshToken) return;
+  session = stored;
+  if (stored.expiresAt - Date.now() < 30000) {
+    refreshSession().catch(error => { if (isNetworkError(error)) updateUserUI(stored.user); });
+  } else {
+    applySession(stored);
+  }
 })();

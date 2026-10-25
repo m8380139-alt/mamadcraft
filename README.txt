@@ -3,7 +3,7 @@ MamadCraft website starter
 Files:
 - index.html: page structure and content
 - style.css: colors, layout, responsive styling
-- script.js: server copy button, login/register (Supabase), gallery viewer
+- script.js: server copy button, login/register (Nhost, username+password), profile, chat, gallery viewer
 - images/: gallery photos
 
 Run locally:

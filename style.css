@@ -57,3 +57,6 @@
 .chat-form input:focus{border-color:var(--green);box-shadow:0 0 0 3px #55ff8a13}
 .chat-form .button{white-space:nowrap;cursor:pointer}
 @media(max-width:600px){.chat-list{height:340px}.chat-msg{max-width:100%}}
+
+.vpn-note{margin:-8px 0 16px;padding:8px 10px;border:1px solid #ffe94a40;border-radius:9px;background:#ffe94a0f;color:var(--yellow);font-size:12px;line-height:1.8}
+.chat-locked small{color:var(--yellow);font-size:12px;line-height:2}

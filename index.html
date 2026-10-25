@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800;900&family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=4" />
+  <link rel="stylesheet" href="style.css?v=6" />
 </head>
 <body>
   <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
@@ -96,9 +96,10 @@
     <section class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
       <button class="modal-close" id="closeAuth" aria-label="بستن">×</button>
       <div class="modal-mark">M</div><span class="section-kicker">MAMADCRAFT ACCOUNT</span><h2 id="authTitle">ورود به حساب</h2>
-      <p class="modal-note">با ایمیل و رمز عبور وارد شو یا حساب جدید بساز.</p>
+      <p class="modal-note">فقط با نام کاربری و رمز عبور وارد شو یا حساب جدید بساز؛ ایمیل لازم نیست.</p>
+      <p class="vpn-note">⚠ ایمیل نداریم؛ پس اگه رمزت رو فراموش کنی راه بازیابی نیست. رمزت رو یادت نگه دار.</p>
       <div class="auth-tabs"><button class="auth-tab active" data-mode="login">ورود</button><button class="auth-tab" data-mode="register">ثبت‌نام</button></div>
-      <form id="authForm"><div id="usernameField" hidden><label for="username">نام کاربری</label><input id="username" name="username" autocomplete="username" placeholder="نام کاربری دلخواه" minlength="3" maxlength="24"></div><label for="email">ایمیل</label><input id="email" name="email" type="email" autocomplete="email" placeholder="name@example.com" required><label for="password">رمز عبور</label><input id="password" name="password" type="password" autocomplete="current-password" placeholder="حداقل ۸ کاراکتر" required minlength="8"><button class="button button-primary auth-submit" type="submit" id="authSubmit">ورود</button><p class="form-message" id="formMessage" aria-live="polite"></p>
+      <form id="authForm"><label for="username">نام کاربری</label><input id="username" name="username" autocomplete="username" placeholder="مثلاً Steve_123" required minlength="3" maxlength="20" pattern="[A-Za-z0-9_]{3,20}" autocapitalize="none" spellcheck="false"><label for="password">رمز عبور</label><input id="password" name="password" type="password" autocomplete="current-password" placeholder="حداقل ۹ کاراکتر" required minlength="9"><button class="button button-primary auth-submit" type="submit" id="authSubmit">ورود</button><p class="form-message" id="formMessage" aria-live="polite"></p>
       </form>
       <p class="security-warning">🔒 رمز عبور تو به‌صورت امن و رمزنگاری‌شده ذخیره می‌شود.</p>
     </section>
@@ -132,6 +133,6 @@
     <p class="lightbox-caption" id="lightboxCaption"></p>
   </div>
 
-  <script src="script.js?v=4"></script>
+  <script src="script.js?v=6"></script>
 </body>
 </html>
