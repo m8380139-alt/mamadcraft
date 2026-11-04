@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://m8380139-alt.github.io/mamadcraft/sitemap.xml
