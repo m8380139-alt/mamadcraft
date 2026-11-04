@@ -76,3 +76,32 @@
 .hero-logo{position:relative;width:min(250px,72%);aspect-ratio:1;border-radius:24%;overflow:hidden;background:#000;box-shadow:0 0 70px #ff7a0052,0 0 0 1px #ff7a0040;animation:float 5s ease-in-out infinite}
 @media(max-width:600px){.hero-logo{width:min(190px,70%)}}
 @media(max-width:600px){.art-label{display:none}}
+
+/* صفحهٔ دانلود */
+.nav-download{color:var(--green)!important;font-weight:700}
+.back-site{display:inline-block;text-decoration:none;font-size:13px}
+.dl-hero{display:flex;flex-direction:column;align-items:center;text-align:center;padding-block:46px 40px}
+.dl-logo{position:relative;width:150px;aspect-ratio:1;border-radius:24%;overflow:hidden;background:#000;box-shadow:0 0 70px #ff7a0052,0 0 0 1px #ff7a0040;margin-bottom:26px;animation:float 5s ease-in-out infinite}
+.dl-logo img{width:100%;height:100%;display:block;object-fit:cover;transform:scale(1.2)}
+.dl-title{font-size:clamp(30px,5vw,48px);margin:16px 0 8px;font-weight:800}
+.dl-title span{background:linear-gradient(95deg,var(--purple),var(--green),var(--yellow));-webkit-background-clip:text;background-clip:text;color:transparent}
+.dl-text{max-width:520px;margin-inline:auto}
+.dl-card{width:min(480px,100%);margin-top:28px;padding:26px;border:1px solid transparent;border-radius:20px;background:linear-gradient(#0e0c0a,#0e0c0a) padding-box,linear-gradient(100deg,var(--purple),var(--green),var(--yellow),var(--orange)) border-box;box-shadow:0 18px 60px #0005}
+.dl-info{display:grid;gap:10px;margin-bottom:22px}
+.dl-row{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:13px;color:var(--muted);padding-bottom:10px;border-bottom:1px dashed #ffffff18}
+.dl-row:last-child{border-bottom:0;padding-bottom:0}
+.dl-row strong{color:var(--text)}
+.dl-ver{color:var(--green)!important;font-family:'Orbitron',sans-serif;letter-spacing:.5px}
+.dl-button{width:100%;padding:17px 20px;font-size:17px;border-radius:14px}
+.dl-file{margin:12px 0 0;font:500 11px 'Orbitron',monospace;color:var(--muted);direction:ltr}
+.dl-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;width:min(860px,100%);margin-top:40px}
+.dl-step{padding:20px 16px;border:1px solid #ffffff12;border-radius:15px;background:linear-gradient(145deg,#17120dd9,#0c0a08)}
+.dl-step b{display:grid;place-items:center;width:36px;height:36px;margin:0 auto 12px;border-radius:50%;background:#ff7a0020;border:1px solid #ff7a0070;color:var(--green);font:800 16px 'Orbitron',sans-serif}
+.dl-step h3{margin:0 0 8px;font-size:15px}
+.dl-step p{margin:0;font-size:12px;line-height:1.9;color:var(--muted)}
+.dl-warning{width:min(620px,100%);margin-top:30px;text-align:right}
+.dl-hash{width:min(620px,100%);margin-top:16px;color:var(--muted);font-size:12px;text-align:right}
+.dl-hash summary{cursor:pointer;color:var(--green)}
+.dl-hash code{display:block;margin:10px 0;padding:10px 12px;border:1px solid #ffffff1b;border-radius:10px;background:#0a0a0c;color:var(--text);font:500 11px 'Orbitron',monospace;overflow-wrap:anywhere;text-align:left}
+.dl-hash p{line-height:1.9;margin:0}
+@media(max-width:700px){.dl-steps{grid-template-columns:1fr}.dl-logo{width:120px}}
