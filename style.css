@@ -60,3 +60,11 @@
 
 .vpn-note{margin:-8px 0 16px;padding:8px 10px;border:1px solid #ffd34a40;border-radius:9px;background:#ffd34a0f;color:var(--yellow);font-size:12px;line-height:1.8}
 .chat-locked small{color:var(--yellow);font-size:12px;line-height:2}
+
+.server-status{display:inline-flex;align-items:center;gap:7px;font-weight:700}
+.server-status:before{content:"";width:8px;height:8px;border-radius:50%;background:#8a7f73}
+.server-status.online{color:#6dff9a}
+.server-status.online:before{background:#6dff9a;box-shadow:0 0 10px #6dff9a}
+.server-status.offline{color:#ff8a8a}
+.server-status.offline:before{background:#ff6b6b;box-shadow:0 0 10px #ff6b6b}
+.server-status.unknown{color:var(--muted)}

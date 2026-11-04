@@ -1,4 +1,4 @@
-const SERVER_ADDRESS = 'mohamadkingxddd-srv-foxddd.play.mihancraft.com:25566';
+const SERVER_ADDRESS = 'mohamadkingxddd-srv-mamadcraft.play.mihancraft.com:25566';
 const copyButton = document.getElementById('copyServer');
 const copyMessage = document.getElementById('copyMessage');
 copyButton.addEventListener('click', async () => {
@@ -9,6 +9,41 @@ copyButton.addEventListener('click', async () => {
     copyMessage.textContent = 'کپی خودکار در این مرورگر در دسترس نیست؛ آدرس را انتخاب و دستی کپی کن.';
   }
 });
+
+// ---------- وضعیت سرور (آنلاین / آفلاین) ----------
+const serverStatus = document.getElementById('serverStatus');
+const STATUS_URL = 'https://api.mcsrvstat.us/3/' + SERVER_ADDRESS;
+function setServerStatus(kind, text) {
+  if (!serverStatus) return;
+  serverStatus.className = 'server-status ' + kind;
+  serverStatus.textContent = text;
+}
+async function checkServerStatus() {
+  if (!serverStatus) return;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10000);
+  try {
+    const res = await fetch(STATUS_URL, { signal: controller.signal });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data.online === true) {
+      const players = data.players || {};
+      const count = typeof players.online === 'number' ? players.online : null;
+      const max = typeof players.max === 'number' ? players.max : null;
+      setServerStatus('online', count === null ? 'آنلاین' : 'آنلاین · ' + count + (max ? ' از ' + max : '') + ' بازیکن');
+    } else if (data.online === false) {
+      setServerStatus('offline', 'فعلاً آفلاین');
+    } else {
+      setServerStatus('unknown', 'وضعیت نامشخص');
+    }
+  } catch (error) {
+    setServerStatus('unknown', 'وضعیت نامشخص');
+  } finally {
+    clearTimeout(timer);
+  }
+}
+checkServerStatus();
+setInterval(() => { if (!document.hidden) checkServerStatus(); }, 60000);
 
 // ---------- Nhost (بدون کتابخانه؛ مستقیم با fetch) ----------
 const NHOST_SUBDOMAIN = 'vvtyudilywndoyxqiqkm';
