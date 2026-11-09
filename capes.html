@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0a0a0c" />
+  <meta name="description" content="فروشگاه کیپ و آیتم‌های زیبایی ممدکرفت — کیپ رایگان بگیر و در بازی بپوش." />
+  <title>Capes | کیپ‌های ممدکرفت</title>
+  <link rel="canonical" href="https://m8380139-alt.github.io/mamadcraft/capes.html" />
+  <link rel="icon" type="image/png" href="images/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800;900&family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=10" />
+  <link rel="stylesheet" href="capes.css?v=1" />
+</head>
+<body>
+  <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="MamadCraft home"><span class="brand-mark"><img src="images/logo-128.png" alt="" width="39" height="39"></span><span>MAMAD<span class="brand-green">CRAFT</span></span></a>
+    <nav class="nav-links" aria-label="منوی اصلی">
+      <a href="index.html#home">خانه</a><a href="index.html#server">سرور</a><a href="capes.html" class="nav-download">کیپ‌ها</a><a href="download.html">دانلود لانچر</a>
+    </nav>
+    <a class="login-open back-site" href="index.html">← بازگشت به سایت</a>
+  </header>
+
+  <main class="wrap capes-page">
+    <div class="eyebrow"><span class="pulse"></span> COSMETICS</div>
+    <h1 class="capes-title">کیپ‌های <span>ممدکرفت</span></h1>
+    <p class="capes-sub">ماه اول همه‌چیز رایگانه! کیپ رو بگیر، «بپوش» رو بزن و داخل بازی نشونش بده.</p>
+
+    <div class="capes-login" id="needLogin" hidden>
+      <p>برای گرفتن کیپ اول باید وارد حساب ممدکرفتت بشی.</p>
+      <a class="button button-primary" href="index.html">ورود / ثبت‌نام</a>
+    </div>
+
+    <div id="capesApp" hidden>
+      <div class="capes-user">سلام <strong id="capesUser"></strong> 👋</div>
+      <div class="capes-tabs" role="tablist">
+        <button class="capes-tab active" data-tab="store" type="button">فروشگاه</button>
+        <button class="capes-tab" data-tab="locker" type="button">کمد من</button>
+      </div>
+      <p class="capes-msg" id="capesMsg" role="status"></p>
+      <div class="capes-grid" id="capesGrid"></div>
+    </div>
+    <p class="capes-msg" id="capesLoading">در حال بارگذاری…</p>
+  </main>
+
+  <script src="capes.js?v=1"></script>
+</body>
+</html>

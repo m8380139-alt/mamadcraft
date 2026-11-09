@@ -1,0 +1,25 @@
+.capes-page{padding-block:40px 70px}
+.capes-title{font:900 clamp(30px,5vw,48px)/1.2 'Vazirmatn',sans-serif;margin:16px 0 8px}
+.capes-title span{background:linear-gradient(95deg,var(--purple),#ff9a2e,var(--green),var(--yellow));-webkit-background-clip:text;background-clip:text;color:transparent}
+.capes-sub{color:var(--muted);font-size:14px;line-height:2;margin:0 0 22px}
+.capes-login{border:1px solid var(--line);border-radius:16px;padding:22px;text-align:center;background:#120e0a}
+.capes-login p{margin:0 0 14px;color:#e8dccf;font-size:14px}
+.capes-user{font-size:14px;color:#e8dccf;margin-bottom:14px}
+.capes-user strong{color:var(--green)}
+.capes-tabs{display:inline-grid;grid-template-columns:1fr 1fr;gap:6px;background:#0a0a0c;padding:5px;border-radius:11px;margin-bottom:16px;min-width:260px}
+.capes-tab{padding:9px 16px;border:0;border-radius:8px;background:transparent;color:var(--muted);cursor:pointer}
+.capes-tab.active{background:#ff7a0020;color:#fff;border:1px solid #ff7a004a}
+.capes-msg{font-size:13px;color:var(--yellow);min-height:20px;margin:0 0 12px}
+.capes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px}
+.cape-card{border:1px solid #ffffff14;border-radius:16px;padding:14px;background:linear-gradient(145deg,#17120dd9,#0c0a08);text-align:center;transition:transform .25s,border-color .25s}
+.cape-card:hover{transform:translateY(-4px);border-color:var(--green)}
+.cape-card.on{border-color:var(--green);box-shadow:0 0 24px #ffa73326}
+.cape-img{width:100%;aspect-ratio:2/3;object-fit:contain;border-radius:12px;background:#0a0a0c;display:block;image-rendering:pixelated}
+.cape-name{font-weight:800;font-size:15px;margin:12px 0 4px}
+.cape-price{font-size:12px;color:var(--green);margin-bottom:10px}
+.cape-price.paid{color:var(--yellow)}
+.cape-btn{width:100%;border-radius:10px;padding:10px;border:1px solid var(--green);background:#ffa7330b;color:var(--green);font-weight:700;cursor:pointer;font-size:13px}
+.cape-btn:hover{background:#ffa73319}
+.cape-btn.main{background:linear-gradient(105deg,var(--purple),#ff8c1a 40%,var(--green));color:#1a0d00;border-color:transparent}
+.cape-btn:disabled{opacity:.5;cursor:not-allowed}
+.capes-empty{grid-column:1/-1;color:var(--muted);text-align:center;padding:30px 0;font-size:14px}
