@@ -269,6 +269,8 @@ const profileInitial = document.getElementById('profileInitial');
 const avatarInput = document.getElementById('avatarInput');
 const nicknameInput = document.getElementById('nickname');
 const bioInput = document.getElementById('bio');
+const mcNameInput = document.getElementById('mcname');
+const MC_NAME_RE = /^[A-Za-z0-9_]{3,16}$/;
 const profileSave = document.getElementById('profileSave');
 const profileMessage = document.getElementById('profileMessage');
 const AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -338,13 +340,15 @@ async function openProfile() {
   profileMessage.textContent = 'کمی صبر کن...';
   nicknameInput.value = displayNameOf(currentUser);
   bioInput.value = '';
+  mcNameInput.value = '';
   setAvatar('');
   try {
-    const data = await gql('query($id: uuid!) { profiles_by_pk(id: $id) { nickname bio avatar } }', { id: currentUser.id });
+    const data = await gql('query($id: uuid!) { profiles_by_pk(id: $id) { nickname bio avatar minecraft_name } }', { id: currentUser.id });
     const p = data.profiles_by_pk;
     if (p) {
       nicknameInput.value = p.nickname || displayNameOf(currentUser);
       bioInput.value = p.bio || '';
+      mcNameInput.value = p.minecraft_name || '';
       setAvatar(safeAvatar(p.avatar));
     }
     profileMessage.textContent = '';
@@ -375,13 +379,20 @@ profileForm.addEventListener('submit', async event => {
     profileMessage.textContent = 'اسم حداکثر ۲۴ و توضیح حداکثر ۲۰۰ کاراکتر باشد.';
     return;
   }
+  const mcName = mcNameInput.value.trim();
+  if (mcName && !MC_NAME_RE.test(mcName)) {
+    profileMessage.textContent = 'اسم ماینکرفت باید ۳ تا ۱۶ کاراکتر و فقط حروف انگلیسی، عدد و _ باشد.';
+    return;
+  }
   profileSave.disabled = true;
   profileMessage.textContent = 'در حال ذخیره...';
   try {
-    await saveProfile({ nickname: nickname || null, bio: bio || null });
+    await saveProfile({ nickname: nickname || null, bio: bio || null, minecraft_name: mcName || null });
     profileMessage.textContent = 'پروفایل ذخیره شد ✓';
   } catch (error) {
-    profileMessage.textContent = gqlErrorText(error, 'ذخیره نشد: ');
+    profileMessage.textContent = /unique|duplicate|profiles_mc_name_unique/i.test((error && error.message) || '')
+      ? 'این اسم ماینکرفت قبلاً توسط کس دیگه‌ای ثبت شده؛ یه اسم دیگه امتحان کن.'
+      : gqlErrorText(error, 'ذخیره نشد: ');
   } finally {
     profileSave.disabled = false;
   }

@@ -64,7 +64,9 @@ async function load() {
     cosmetics(order_by:{sort_order:asc}) { id slug name category price_irt preview_url free_for_now }
     user_cosmetics { cosmetic_id }
     equipped_cosmetics { cosmetic_id category }
+    profiles_by_pk(id:"${session.user.id}") { minecraft_name }
   }`);
+  $('mcNotice').hidden = !!(d.profiles_by_pk && d.profiles_by_pk.minecraft_name);
   state.cosmetics = d.cosmetics;
   state.owned = new Set(d.user_cosmetics.map(x => x.cosmetic_id));
   state.equipped = {};
