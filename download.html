@@ -32,7 +32,7 @@
 
       <div class="dl-card">
         <div class="dl-info">
-          <div class="dl-row"><span>نسخه</span><strong class="dl-ver">v1.9.0</strong></div>
+          <div class="dl-row"><span>نسخه</span><strong class="dl-ver" id="dlVer">v1.9.7</strong></div>
           <div class="dl-row"><span>سیستم‌عامل</span><strong>Windows 64-bit</strong></div>
           <div class="dl-row"><span>حجم</span><strong>حدود ۲۶ مگابایت</strong></div>
         </div>
@@ -50,12 +50,22 @@
 
       <details class="dl-hash">
         <summary>بررسی سلامت فایل (SHA-256)</summary>
-        <code dir="ltr">c33f8ab6844462bdcf7bf8635cb2226a62c163730f1782211276507ef80a8139</code>
+        <code dir="ltr" id="dlHash">c33f8ab6844462bdcf7bf8635cb2226a62c163730f1782211276507ef80a8139</code>
         <p>اگه دوست داری مطمئن بشی فایلت دست‌نخورده‌ست، این کد رو با خروجی دستور <span dir="ltr">certutil -hashfile MamadCraftLauncher.exe SHA256</span> مقایسه کن.</p>
       </details>
     </section>
   </main>
 
   <footer class="footer wrap"><a class="brand footer-brand" href="index.html"><span class="brand-mark"><img src="images/logo-128.png" alt="" width="31" height="31"></span><span>MAMAD<span class="brand-green">CRAFT</span></span></a><p>ساخته‌شده با <span class="heart">♥</span> برای عاشقان ماینکرفت</p><a href="index.html" class="back-top">بازگشت به سایت ↑</a></footer>
+  <script>
+    // نسخه و هش رو از downloads/version.json می‌خونه تا همیشه با فایل واقعی یکی باشه
+    fetch('downloads/version.json?t=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.version) document.getElementById('dlVer').textContent = 'v' + d.version;
+        if (d.sha256) document.getElementById('dlHash').textContent = d.sha256;
+      })
+      .catch(function () {});
+  </script>
 </body>
 </html>
