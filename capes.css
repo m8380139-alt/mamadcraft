@@ -23,3 +23,15 @@
 .cape-btn.main{background:linear-gradient(105deg,var(--purple),#ff8c1a 40%,var(--green));color:#1a0d00;border-color:transparent}
 .cape-btn:disabled{opacity:.5;cursor:not-allowed}
 .capes-empty{grid-column:1/-1;color:var(--muted);text-align:center;padding:30px 0;font-size:14px}
+
+.capes-sub-tabs{margin-inline-start:10px}
+.capes-subtab{padding:9px 16px;border:0;border-radius:8px;background:transparent;color:var(--muted);cursor:pointer}
+.capes-subtab.active{background:#ff7a0020;color:#fff;border:1px solid #ff7a004a}
+.coll-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px}
+.coll-card{border:1px solid #ffffff14;border-radius:18px;padding:14px;background:linear-gradient(145deg,#17120dd9,#0c0a08);text-align:center;transition:transform .25s,border-color .25s}
+.coll-card:hover{transform:translateY(-4px);border-color:var(--green)}
+.coll-card.done{border-color:var(--green)}
+.coll-img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:12px;background:#0a0a0c;display:block}
+.coll-thumbs{display:flex;gap:6px;justify-content:center;margin:10px 0 2px}
+.coll-thumbs img{width:34px;height:51px;object-fit:contain;border-radius:6px;background:#0a0a0c;image-rendering:pixelated}
+.coll-count{font-size:12px;color:var(--muted);margin-bottom:4px}

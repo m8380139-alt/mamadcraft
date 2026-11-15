@@ -6,8 +6,9 @@ const GRAPHQL_URL = 'https://' + NHOST_SUBDOMAIN + '.graphql.' + NHOST_REGION + 
 const SESSION_KEY = 'mamadcraft_session_v1';
 
 let session = null;
-let state = { cosmetics: [], owned: new Set(), equipped: {} };
+let state = { cosmetics: [], owned: new Set(), equipped: {}, collections: [] };
 let tab = 'store';
+let sec = 'collections';
 
 const $ = id => document.getElementById(id);
 function say(text) { $('capesMsg').textContent = text || ''; }
@@ -71,6 +72,11 @@ async function load() {
   state.owned = new Set(d.user_cosmetics.map(x => x.cosmetic_id));
   state.equipped = {};
   d.equipped_cosmetics.forEach(x => { state.equipped[x.category] = x.cosmetic_id; });
+  // کالکشن‌ها جدا خونده می‌شن تا اگه جدولشون هنوز ساخته نشده، بقیه‌ی صفحه خراب نشه
+  try {
+    const c = await gql(`query { collections(order_by:{sort_order:asc}) { id name description preview_url price_irt free_for_now collection_cosmetics { cosmetic_id } } }`);
+    state.collections = c.collections || [];
+  } catch (e) { state.collections = []; }
 }
 
 function button(text, cls, onClick, disabled) {
@@ -108,9 +114,50 @@ function card(c) {
   return el;
 }
 
+const claimMany = ids => gql(`mutation($o:[user_cosmetics_insert_input!]!){ insert_user_cosmetics(objects:$o){ affected_rows } }`, { o: ids.map(id => ({ cosmetic_id: id })) });
+
+function collectionCard(col) {
+  const ids = (col.collection_cosmetics || []).map(x => x.cosmetic_id);
+  const missing = ids.filter(id => !state.owned.has(id));
+  const done = ids.length > 0 && !missing.length;
+  const el = document.createElement('div');
+  el.className = 'coll-card' + (done ? ' done' : '');
+  const img = document.createElement('img');
+  img.className = 'coll-img'; img.alt = col.name; img.loading = 'lazy'; img.src = safeImg(col.preview_url);
+  const name = document.createElement('div'); name.className = 'cape-name'; name.textContent = col.name;
+  const count = document.createElement('div'); count.className = 'coll-count';
+  count.textContent = ids.length.toLocaleString('fa-IR') + ' کیپ در این کالکشن';
+  const thumbs = document.createElement('div'); thumbs.className = 'coll-thumbs';
+  ids.slice(0, 5).forEach(id => {
+    const c = state.cosmetics.find(x => x.id === id);
+    if (!c) return;
+    const t = document.createElement('img'); t.alt = c.name; t.loading = 'lazy'; t.src = safeImg(c.preview_url);
+    thumbs.append(t);
+  });
+  const price = document.createElement('div');
+  price.className = 'cape-price' + (col.free_for_now ? '' : ' paid');
+  price.textContent = done ? 'کامل تو کمد توئه ✓' : (col.free_for_now ? 'رایگان 🎁' : (col.price_irt.toLocaleString('fa-IR') + ' تومان'));
+  el.append(img, name, count, thumbs, price);
+  if (done) el.append(button('در کمد توئه', '', null, true));
+  else if (col.free_for_now && ids.length) el.append(button('دریافت کالکشن', 'main', () => act(() => claimMany(missing))));
+  else el.append(button('به‌زودی', '', null, true));
+  return el;
+}
+
 function render() {
   const grid = $('capesGrid');
   grid.textContent = '';
+  $('storeTabs').hidden = tab !== 'store';
+  grid.className = (tab === 'store' && sec === 'collections') ? 'coll-grid' : 'capes-grid';
+  if (tab === 'store' && sec === 'collections') {
+    if (!state.collections.length) {
+      const p = document.createElement('p'); p.className = 'capes-empty';
+      p.textContent = 'کالکشن‌ها به‌زودی میان!';
+      grid.append(p); return;
+    }
+    state.collections.forEach(c => grid.append(collectionCard(c)));
+    return;
+  }
   const list = state.cosmetics.filter(c => tab === 'store' || state.owned.has(c.id));
   if (!list.length) {
     const p = document.createElement('p'); p.className = 'capes-empty';
@@ -119,6 +166,12 @@ function render() {
   }
   list.forEach(c => grid.append(card(c)));
 }
+
+document.querySelectorAll('.capes-subtab').forEach(b => b.addEventListener('click', () => {
+  sec = b.dataset.sec;
+  document.querySelectorAll('.capes-subtab').forEach(x => x.classList.toggle('active', x === b));
+  render();
+}));
 
 document.querySelectorAll('.capes-tab').forEach(b => b.addEventListener('click', () => {
   tab = b.dataset.tab;
