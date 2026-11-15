@@ -173,7 +173,10 @@ function render() {
     state.collections.forEach(c => grid.append(collectionCard(c)));
     return;
   }
-  const list = state.cosmetics.filter(c => tab === 'store' || state.owned.has(c.id));
+  // کیپ‌هایی که داخل یه کالکشن هستن فقط تو پک نشون داده می‌شن، نه تو بخش کیپ‌های تکی
+  const packed = new Set();
+  state.collections.forEach(col => (col.collection_cosmetics || []).forEach(x => packed.add(x.cosmetic_id)));
+  const list = state.cosmetics.filter(c => tab === 'store' ? !packed.has(c.id) : state.owned.has(c.id));
   if (!list.length) {
     const p = document.createElement('p'); p.className = 'capes-empty';
     p.textContent = tab === 'store' ? 'هنوز آیتمی اضافه نشده.' : 'کمدت خالیه؛ از فروشگاه یه کیپ رایگان بگیر!';
