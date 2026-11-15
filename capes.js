@@ -77,7 +77,22 @@ async function load() {
     const c = await gql(`query { collections(order_by:{sort_order:asc}) { id name description preview_url price_irt free_for_now collection_cosmetics { cosmetic_id } } }`);
     state.collections = c.collections || [];
   } catch (e) { state.collections = []; }
+  // کالکشن‌های داخلی سایت (بدون نیاز به جدول دیتابیس)؛ اگه توی دیتابیس هم هم‌نام بود، همون دیتابیس اولویت داره
+  BUILTIN_COLLECTIONS.forEach(b => {
+    if (state.collections.some(c => c.name === b.name)) return;
+    const items = b.slugs.map(s => state.cosmetics.find(c => c.slug === s)).filter(Boolean)
+      .map(c => ({ cosmetic_id: c.id }));
+    if (items.length) state.collections.push({ id: b.id, name: b.name, description: b.description,
+      preview_url: b.preview_url, price_irt: b.price_irt, free_for_now: b.free_for_now, collection_cosmetics: items });
+  });
 }
+
+const BUILTIN_COLLECTIONS = [{
+  id: 'builtin-silver', name: 'کالکشن نقره ممد کلاینت', description: '۸ کیپ ویژه',
+  preview_url: 'https://m8380139-alt.github.io/mamadcraft/capes/silver-collection.png',
+  price_irt: 0, free_for_now: true,
+  slugs: ['vanilla', 'pink-cherry-blossom', 'mc-anniversary', 'menace-nether', 'aurora', 'copper', 'home-2025', 'crown-event']
+}];
 
 function button(text, cls, onClick, disabled) {
   const b = document.createElement('button');
