@@ -105,3 +105,15 @@
 .dl-hash code{display:block;margin:10px 0;padding:10px 12px;border:1px solid #ffffff1b;border-radius:10px;background:#0a0a0c;color:var(--text);font:500 11px 'Orbitron',monospace;overflow-wrap:anywhere;text-align:left}
 .dl-hash p{line-height:1.9;margin:0}
 @media(max-width:700px){.dl-steps{grid-template-columns:1fr}.dl-logo{width:120px}}
+
+/* v11: منوی مرتب‌تر و دکمه‌های کمتر */
+.nav-links{align-items:center;gap:26px}
+.nav-links a.nav-download{padding:8px 16px;border:1px solid var(--green);border-radius:10px;background:#ffa7330f}
+.nav-links a.nav-download:hover{background:#ffa73322;color:var(--yellow)}
+.login-open{background:linear-gradient(105deg,var(--purple),var(--green));color:#1a0d00;border:0;font-weight:800;box-shadow:0 6px 22px #ff7a0030}
+.ico{width:18px;height:18px;flex:0 0 18px}
+.copy-button:hover{background:#ffa73322}
+.footer-links{display:flex;gap:18px}
+.footer-links a{color:var(--muted);transition:color .2s}
+.footer-links a:hover{color:var(--green)}
+@media(max-width:600px){.nav-links a.nav-download{padding:6px 10px}.footer-links{order:2}}
