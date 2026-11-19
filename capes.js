@@ -92,6 +92,11 @@ const BUILTIN_COLLECTIONS = [{
   preview_url: 'https://m8380139-alt.github.io/mamadcraft/capes/silver-collection.png',
   price_irt: 0, free_for_now: true,
   slugs: ['vanilla', 'pink-cherry-blossom', 'mc-anniversary', 'menace-nether', 'aurora', 'copper', 'home-2025', 'crown-event']
+}, {
+  id: 'builtin-gold', name: 'پک گلد', description: '۵ کیپ طلایی',
+  preview_url: 'https://m8380139-alt.github.io/mamadcraft/capes/gold-collection.png',
+  price_irt: 0, free_for_now: true,
+  slugs: ['gold-soviet', 'gold-faravahar-purple', 'gold-faravahar', 'gold-lion-sun', 'gold-royal-lion']
 }];
 
 function button(text, cls, onClick, disabled) {
