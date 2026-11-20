@@ -1,0 +1,44 @@
+/* MamadCraft modern layer: دکمه‌ها، کارت‌ها و انیمیشن‌ها (روی style.css سوار می‌شه) */
+.button{position:relative;overflow:hidden;isolation:isolate;border-radius:14px;letter-spacing:.2px;
+  transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s,border-color .25s,background .25s}
+.button::after{content:"";position:absolute;inset:0;z-index:-1;left:-120%;width:80%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.38),transparent);transform:skewX(-20deg);transition:left .6s}
+.button:hover::after{left:140%}
+.button:hover{transform:translateY(-3px) scale(1.02)}
+.button:active{transform:translateY(0) scale(.97)}
+.button:focus-visible{outline:2px solid var(--yellow);outline-offset:3px}
+.button-primary{box-shadow:0 8px 28px #ff7a0040,inset 0 1px 0 #ffffff55}
+.button-primary:hover{box-shadow:0 12px 40px #ff7a0075,0 0 0 4px #ff7a0022,inset 0 1px 0 #ffffff66}
+.button-ghost,.button-aparat{backdrop-filter:blur(8px)}
+.button-ghost:hover,.button-aparat:hover{background:#ff7a0022;box-shadow:0 8px 26px #ff7a0030}
+.cape-btn,.capes-tab,.capes-subtab,.modal-close{transition:transform .2s,box-shadow .25s,background .25s,border-color .25s}
+.cape-btn:hover,.capes-tab:hover,.capes-subtab:hover{transform:translateY(-2px);box-shadow:0 8px 22px #ff7a0035}
+.cape-btn:active,.capes-tab:active,.capes-subtab:active{transform:scale(.96)}
+
+/* کارت‌ها */
+.feature-line,.gallery-item,.cape-card,.coll-card,.aparat-section{transition:transform .3s cubic-bezier(.2,.8,.2,1),box-shadow .3s,border-color .3s}
+.feature-line:hover,.cape-card:hover,.coll-card:hover{transform:translateY(-5px);box-shadow:0 14px 38px #ff7a0030;border-color:#ff7a0090}
+.gallery-item:hover img{transform:scale(1.07)}
+.cape-img,.coll-img{transition:transform .4s}
+.cape-card:hover .cape-img,.coll-card:hover .coll-img{transform:scale(1.06) rotate(-1deg)}
+
+/* نوار بالا */
+.topbar{transition:background .3s,box-shadow .3s,backdrop-filter .3s}
+.topbar.is-scrolled{background:rgba(10,8,6,.78);backdrop-filter:blur(14px);box-shadow:0 6px 30px #00000066}
+.nav-links a{position:relative}
+.nav-links a::after{content:"";position:absolute;left:0;right:0;bottom:-5px;height:2px;border-radius:2px;background:var(--purple);
+  transform:scaleX(0);transform-origin:center;transition:transform .3s}
+.nav-links a:hover::after{transform:scaleX(1)}
+
+/* ورود تدریجی هنگام اسکرول */
+.mc-reveal{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.8,.2,1);transition-delay:var(--d,0s)}
+.mc-reveal.mc-in{opacity:1;transform:none}
+
+/* نبض نقطهٔ آنلاین */
+.live-pill,.meta-dot{animation:mcPulse 2.4s ease-in-out infinite}
+@keyframes mcPulse{0%,100%{box-shadow:0 0 0 0 #ff7a0055}50%{box-shadow:0 0 0 8px #ff7a0000}}
+
+@media (prefers-reduced-motion:reduce){
+  .button,.button::after,.mc-reveal,.feature-line,.cape-card,.coll-card,.gallery-item img,.live-pill,.meta-dot{animation:none!important;transition:none!important}
+  .mc-reveal{opacity:1;transform:none}
+}
